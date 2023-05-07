@@ -3,6 +3,8 @@
 #include <stdbool.h>
 #include <malloc.h>
 #define MAX_PATH_LEANGTH 60
+#define MAX_PUFFER_SIZE 1024
+#define CSV_TRENNZEICHEN ";"
 enum datatyp {NONE,CSV,JSON,XML};
 
 struct Node{
@@ -11,10 +13,23 @@ struct Node{
 } ;
 
 void initQueqe(struct Node* queqe){
+    queqe = (struct Node*) malloc(sizeof(struct Node));
     queqe->next = NULL;
     queqe -> data = NULL;
 }
 
+void destructQueqe(struct Node* queqe){
+
+    while(queqe != NULL){
+        struct Node* pos = queqe;
+        while (pos != NULL && pos->next!=NULL){
+            pos = pos->next;
+        }
+        free(pos);
+        pos = NULL;
+    }
+
+}
 void addNode(struct Node* queqe, char* data){
     struct Node* new = (struct Node*) malloc(sizeof(struct Node));
     new->data = data;
@@ -73,17 +88,26 @@ bool getPaths(int argc, char** argv, const char* inputPath, const char* outputPa
     return false;
 }
 
-void readCsv(FILE* in){
-    char line[1024];
-    int length;
-    while (fgets(line,1023,in)){
-        if((length = strlen(line)))
-            continue;
-        line[length-1] = '\0';
-    }
-}
+
 
 void readerCSV(FILE* file,struct Node* head){
+    char buffer[MAX_PUFFER_SIZE];
+    int buffLength;
+    char* data ,nextline = (char*) malloc(sizeof(char)*2);
+    strcyp(nextline,"\n");
+    while(fgets(buffer,MAX_PUFFER_SIZE,file)){
+        if(!(buffLength = strlen(buffer)))
+            continue;
+        buffer[buffLength-1] = '\0';
+        char* token = strtok(buffer, CSV_TRENNZEICHEN);
+        while (token) {
+            data = (char*) malloc(strlen(token)*sizeof(char)+1);
+            strcpy(data,token);
+            addNode(head,(char*) malloc(strlen(token)*sizeof(char)+1));
+        }
+        addNode(head,nextline);
+
+    }
 
 }
 void readerJSON(FILE* file,struct Node* head){
@@ -121,6 +145,15 @@ int main(int argc, char** argv)
     FILE* inFile = fopen(inPath,"r");
     FILE* outFile = fopen(outPath,"w");
 
+    if(!inFile){
+        fprintf(stderr,"ERROR: Could not open Inputfile\n");
+        return 1;
+    }
+    if(!outFile){
+        fprintf(stderr,"ERROR: Could not open Outputfile\n");
+        return 2;
+    }
+
 
     strtok(inPath,".");
     char* inDataTyp = strtok(NULL,".");
@@ -140,7 +173,7 @@ int main(int argc, char** argv)
         reader[NONE](inFile,head);
     }
 
-
+    printf("data: %s",head->data);
     if(!strcmp(outDataTyp,"csv")){
         writer[CSV](inFile,head);
     } else if(!strcmp(outDataTyp,"json")) {
@@ -150,6 +183,8 @@ int main(int argc, char** argv)
     } else {
         writer[NONE](inFile,head);
     }
+
+    destructQueqe(head);
 
 
 
