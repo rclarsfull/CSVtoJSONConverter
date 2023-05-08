@@ -4,13 +4,22 @@
 #include <malloc.h>
 #define MAX_PATH_LEANGTH 60
 #define MAX_PUFFER_SIZE 1024
+#define MAX_NUMBER_OF_HEADLINES 20
 #define CSV_TRENNZEICHEN ";"
+
+int queueSize = 0;
 enum datatyp {NONE,CSV,JSON,XML};
 
 struct Node{
     struct Node* next;
     char* data;
 } ;
+
+bool isQueqeEmpty(){
+    if(queueSize > 0)
+        return false;
+    return true;
+}
 
 void initQueqe(struct Node** queue){
     *queue = (struct Node*) malloc(sizeof(struct Node));
@@ -20,6 +29,8 @@ void initQueqe(struct Node** queue){
 
 void destructQueqe(struct Node** queue){
 
+    if(isQueqeEmpty())
+        return;
     while((*queue) != NULL){
         struct Node* pos = (*queue);
         struct Node* prevPos = NULL;
@@ -37,6 +48,7 @@ void destructQueqe(struct Node** queue){
 
 }
 void addNode(struct Node* queue, char* data){
+    queueSize++;
     if(queue->data == NULL){
         queue->data = data;
         return;
@@ -52,22 +64,16 @@ void addNode(struct Node* queue, char* data){
     pos->next = new;
 }
 
-char* popNode(struct Node* queqe){
-    struct Node* pos = queqe;
-    if(pos == NULL)
+char* popNode(struct Node** queqe){
+    if(isQueqeEmpty())
         return NULL;
-    while (pos->next!=NULL)
-        pos = pos->next;
-    char* out = pos->data;
-    free(pos);
-    pos = NULL;
+    queueSize--;
+    char* out = (*queqe)->data;
+    struct Node* old = (*queqe);
+    (*queqe) = (*queqe)->next;
+    free(old);
     return out;
 }
-
-
-
-
-
 
 
 bool getPaths(int argc, char** argv, const char* inputPath, const char* outputPath)
@@ -77,7 +83,6 @@ bool getPaths(int argc, char** argv, const char* inputPath, const char* outputPa
 
     for (int i = 0; i < argc; i++)
     {
-        printf("%s ",argv[i]);
         if (strcmp(argv[i], "-i") == 0)
             inFlagPos = i;
         else if (strcmp(argv[i], "-in") == 0)
@@ -87,17 +92,14 @@ bool getPaths(int argc, char** argv, const char* inputPath, const char* outputPa
         else if (strcmp(argv[i], "-out") == 0)
             outFlagPos = i;
     }
-    printf("\ni=%i\to=%i" ,inFlagPos,outFlagPos);
     if (inFlagPos > -1 && outFlagPos > -1)
     {
         strcpy(inputPath,argv[inFlagPos + 1]);
         strcpy(outputPath,argv[outFlagPos + 1]);
-        //printf("in=%s\tout=%s",inputPath,outputPath);
         return true;
     }
     return false;
 }
-
 
 
 void readerCSV(FILE* file,struct Node* head){
@@ -107,7 +109,7 @@ void readerCSV(FILE* file,struct Node* head){
     char* data;
     char* nextline = (char*) malloc(sizeof(char)*2);
     strcpy(nextline,"\n");
-    while(fgets(buffer,MAX_PUFFER_SIZE,file)){     //Problem: immer false
+    while(fgets(buffer,MAX_PUFFER_SIZE,file)){
         if(!(buffLength = strlen(buffer)))
             continue;
         buffer[buffLength-1] = '\0';
@@ -124,19 +126,72 @@ void readerCSV(FILE* file,struct Node* head){
 }
 
 void readerJSON(FILE* file,struct Node* head){
-
+     fprintf(stderr,"\nERROR: Not jet implemented!");
 }
 void readerXML(FILE* file,struct Node* head){
-
+     fprintf(stderr,"\nERROR: Not jet implemented!");
 }
 void writerCSV(FILE* file,struct Node* head){
-
+     fprintf(stderr,"\nERROR: Not jet implemented!");
 }
 void writerJSON(FILE* file,struct Node* head){
+    fprintf(file,"[\n\t{\n");
 
+    char* headlines[MAX_NUMBER_OF_HEADLINES];
+    memset(headlines,0,MAX_NUMBER_OF_HEADLINES*sizeof(char*));
+    char* headline = NULL;
+    int counterHeadlines = 0;
+
+    while (counterHeadlines < MAX_NUMBER_OF_HEADLINES && (headline = popNode(&head)) != NULL && strcmp(headline,"\n") != 0) {
+        headlines[counterHeadlines] = headline;
+        counterHeadlines++;
+    }
+
+    char* data = NULL;
+    int counter = 0;
+    while((data = popNode(&head)) != NULL){
+        if(strcmp(data,"\n") == 0){
+            counter = 0;
+            if(!isQueqeEmpty())
+                fprintf(file,"\t},\n\t{\n");
+            continue;
+        }
+        if(counter < counterHeadlines-1)
+            fprintf(file,"\t\t\"%s\": \"%s\",\n",headlines[counter],data);
+        else
+            fprintf(file,"\t\t\"%s\": \"%s\"\n",headlines[counter],data);
+        counter++;
+    }
+    fprintf(file,"\t}\n]\n");
 }
 void writerXML(FILE* file,struct Node* head){
+    fprintf(file,"<Table>\n\t<Entry>\n");
 
+    char* headlines[MAX_NUMBER_OF_HEADLINES];
+    memset(headlines,0,MAX_NUMBER_OF_HEADLINES*sizeof(char*));
+    char* headline = NULL;
+    int counterHeadlines = 0;
+
+    while (counterHeadlines < MAX_NUMBER_OF_HEADLINES && (headline = popNode(&head)) != NULL && strcmp(headline,"\n") != 0) {
+        headlines[counterHeadlines] = headline;
+        counterHeadlines++;
+    }
+
+    char* data = NULL;
+    int counter = 0;
+    while((data = popNode(&head)) != NULL){
+        if(strcmp(data,"\n") == 0){
+            counter = 0;
+            if(!isQueqeEmpty())
+                fprintf(file,"\t</Entry>\n\t<Entry>\n");
+            continue;
+        }
+
+        fprintf(file,"\t\t<%s>%s</%s>\n",headlines[counter],data,headlines[counter]);
+
+        counter++;
+    }
+    fprintf(file,"\t</Entry>\n</Table>\n");
 }
 
 
@@ -162,11 +217,11 @@ int main(int argc, char** argv)
 
     if(!inFile){
         fprintf(stderr,"ERROR: Could not open Inputfile\n");
-        return 1;
+        return 2;
     }
     if(!outFile){
         fprintf(stderr,"ERROR: Could not open Outputfile\n");
-        return 2;
+        return 3;
     }
 
 
@@ -194,7 +249,7 @@ int main(int argc, char** argv)
         reader[NONE](inFile,head);
     }
 
-    printf("data: %s",head->data);
+
 
     if(!strcmp(outDataTyp,"csv")){
         writer[CSV](outFile,head);
@@ -207,10 +262,8 @@ int main(int argc, char** argv)
     }
 
     destructQueqe(&head);
-
-
-
-
+    fclose(inFile);
+    fclose(outFile);
 
     return 0;
 }
