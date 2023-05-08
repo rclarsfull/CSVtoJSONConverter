@@ -107,8 +107,6 @@ void readerCSV(FILE* file,struct Node* head){
     memset(buffer,'\0',MAX_PUFFER_SIZE);
     int buffLength;
     char* data;
-    char* nextline = (char*) malloc(sizeof(char)*2);
-    strcpy(nextline,"\n");
     while(fgets(buffer,MAX_PUFFER_SIZE,file)){
         if(!(buffLength = strlen(buffer)))
             continue;
@@ -120,6 +118,8 @@ void readerCSV(FILE* file,struct Node* head){
             addNode(head,data);
             token = strtok(NULL, CSV_TRENNZEICHEN);
         }
+        char* nextline = (char*) malloc(sizeof(char)*2);
+        strcpy(nextline,"\n");
         addNode(head,nextline);
         memset(buffer,'\0',MAX_PUFFER_SIZE);
     }
@@ -154,16 +154,21 @@ void writerJSON(FILE* file,struct Node* head){
             counter = 0;
             if(!isQueqeEmpty())
                 fprintf(file,"\t},\n\t{\n");
+            free(data);
+            data = NULL;
             continue;
         }
         if(counter < counterHeadlines-1)
             fprintf(file,"\t\t\"%s\": \"%s\",\n",headlines[counter],data);
         else
             fprintf(file,"\t\t\"%s\": \"%s\"\n",headlines[counter],data);
+        free(data);
+        data = NULL;
         counter++;
     }
     fprintf(file,"\t}\n]\n");
 }
+
 void writerXML(FILE* file,struct Node* head){
     fprintf(file,"<Table>\n\t<Entry>\n");
 
@@ -184,11 +189,14 @@ void writerXML(FILE* file,struct Node* head){
             counter = 0;
             if(!isQueqeEmpty())
                 fprintf(file,"\t</Entry>\n\t<Entry>\n");
+            free(data);
+            data = NULL;
             continue;
         }
 
         fprintf(file,"\t\t<%s>%s</%s>\n",headlines[counter],data,headlines[counter]);
-
+        free(data);
+        data = NULL;
         counter++;
     }
     fprintf(file,"\t</Entry>\n</Table>\n");
