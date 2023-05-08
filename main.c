@@ -12,30 +12,40 @@ struct Node{
     char* data;
 } ;
 
-void initQueqe(struct Node** queqe){
-    *queqe = (struct Node*) malloc(sizeof(struct Node));
-    (*queqe) -> next = NULL;
-    (*queqe) -> data = NULL;
+void initQueqe(struct Node** queue){
+    *queue = (struct Node*) malloc(sizeof(struct Node));
+    (*queue) -> next = NULL;
+    (*queue) -> data = NULL;
 }
 
-void destructQueqe(struct Node** queqe){
+void destructQueqe(struct Node** queue){
 
-    while((*queqe) != NULL){
-        struct Node* pos = (*queqe);
-        while (pos != NULL && pos->next!=NULL){
+    while((*queue) != NULL){
+        struct Node* pos = (*queue);
+        struct Node* prevPos = NULL;
+        struct Node* prevPrevPos = NULL;
+        while (pos!=NULL){
+            prevPrevPos = prevPos;
+            prevPos = pos;
             pos = pos->next;
         }
-        free(pos);
-        pos = NULL;
+        if(prevPos != NULL)
+            free(prevPos);
+        if(prevPrevPos != NULL)
+            prevPrevPos->next = NULL;
     }
 
 }
-void addNode(struct Node* queqe, char* data){
+void addNode(struct Node* queue, char* data){
+    if(queue->data == NULL){
+        queue->data = data;
+        return;
+    }
     struct Node* new = (struct Node*) malloc(sizeof(struct Node));
     new->data = data;
     new->next = NULL;
 
-    struct Node* pos = queqe;
+    struct Node* pos = queue;
     while (pos->next!=NULL)
         pos = pos->next;
 
@@ -105,13 +115,14 @@ void readerCSV(FILE* file,struct Node* head){
         while (token) {
             data = (char*) malloc(strlen(token)*sizeof(char)+1);
             strcpy(data,token);
-            addNode(head,(char*) malloc(strlen(token)*sizeof(char)+1));
+            addNode(head,data);
+            token = strtok(NULL, CSV_TRENNZEICHEN);
         }
         addNode(head,nextline);
-
+        memset(buffer,'\0',MAX_PUFFER_SIZE);
     }
-
 }
+
 void readerJSON(FILE* file,struct Node* head){
 
 }
@@ -159,8 +170,8 @@ int main(int argc, char** argv)
     }
 
 
-    char inTemp[strlen(inPath)+1];
-    char outTemp[strlen(outPath)+1];
+    char inTemp[MAX_PATH_LEANGTH];
+    char outTemp[MAX_PATH_LEANGTH];
     strcpy(inTemp,inPath);
     strcpy(outTemp,outPath);
 
@@ -195,7 +206,7 @@ int main(int argc, char** argv)
         writer[NONE](outFile,head);
     }
 
-    destructQueqe(head);
+    destructQueqe(&head);
 
 
 
