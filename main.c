@@ -97,7 +97,7 @@ void readerCSV(FILE* file,struct Node* head){
     char* data;
     char* nextline = (char*) malloc(sizeof(char)*2);
     strcpy(nextline,"\n");
-    while(fgets(buffer,MAX_PUFFER_SIZE,file)){
+    while(fgets(buffer,MAX_PUFFER_SIZE,file)){     //Problem: immer false
         if(!(buffLength = strlen(buffer)))
             continue;
         buffer[buffLength-1] = '\0';
