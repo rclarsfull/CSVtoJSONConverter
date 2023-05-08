@@ -12,16 +12,16 @@ struct Node{
     char* data;
 } ;
 
-void initQueqe(struct Node* queqe){
-    queqe = (struct Node*) malloc(sizeof(struct Node));
-    queqe->next = NULL;
-    queqe -> data = NULL;
+void initQueqe(struct Node** queqe){
+    *queqe = (struct Node*) malloc(sizeof(struct Node));
+    (*queqe) -> next = NULL;
+    (*queqe) -> data = NULL;
 }
 
-void destructQueqe(struct Node* queqe){
+void destructQueqe(struct Node** queqe){
 
-    while(queqe != NULL){
-        struct Node* pos = queqe;
+    while((*queqe) != NULL){
+        struct Node* pos = (*queqe);
         while (pos != NULL && pos->next!=NULL){
             pos = pos->next;
         }
@@ -81,7 +81,7 @@ bool getPaths(int argc, char** argv, const char* inputPath, const char* outputPa
     if (inFlagPos > -1 && outFlagPos > -1)
     {
         strcpy(inputPath,argv[inFlagPos + 1]);
-        strcpy(outputPath,argv[inFlagPos + 1]);
+        strcpy(outputPath,argv[outFlagPos + 1]);
         //printf("in=%s\tout=%s",inputPath,outputPath);
         return true;
     }
@@ -92,9 +92,11 @@ bool getPaths(int argc, char** argv, const char* inputPath, const char* outputPa
 
 void readerCSV(FILE* file,struct Node* head){
     char buffer[MAX_PUFFER_SIZE];
+    memset(buffer,'\0',MAX_PUFFER_SIZE);
     int buffLength;
-    char* data ,nextline = (char*) malloc(sizeof(char)*2);
-    strcyp(nextline,"\n");
+    char* data;
+    char* nextline = (char*) malloc(sizeof(char)*2);
+    strcpy(nextline,"\n");
     while(fgets(buffer,MAX_PUFFER_SIZE,file)){
         if(!(buffLength = strlen(buffer)))
             continue;
@@ -136,6 +138,8 @@ int main(int argc, char** argv)
 
     char inPath[MAX_PATH_LEANGTH];
     char outPath[MAX_PATH_LEANGTH];
+    memset(inPath,'\0',MAX_PATH_LEANGTH);
+    memset(outPath,'\0',MAX_PATH_LEANGTH);
 
     if (!getPaths(argc, argv, inPath, outPath)){
         fprintf(stderr,"\nPlease provide an input an output parameter");
@@ -155,13 +159,19 @@ int main(int argc, char** argv)
     }
 
 
-    strtok(inPath,".");
+    char inTemp[strlen(inPath)+1];
+    char outTemp[strlen(outPath)+1];
+    strcpy(inTemp,inPath);
+    strcpy(outTemp,outPath);
+
+
+    strtok(inTemp,".");
     char* inDataTyp = strtok(NULL,".");
-    strtok(outPath,".");
+    strtok(outTemp,".");
     char* outDataTyp = strtok(NULL,".");
 
-    struct Node* head = (struct Node*) malloc(sizeof(struct Node));
-    initQueqe(head);
+    struct Node* head = NULL;
+    initQueqe(&head);
 
     if(!strcmp(inDataTyp,"csv")){
         reader[CSV](inFile,head);
@@ -174,14 +184,15 @@ int main(int argc, char** argv)
     }
 
     printf("data: %s",head->data);
+
     if(!strcmp(outDataTyp,"csv")){
-        writer[CSV](inFile,head);
+        writer[CSV](outFile,head);
     } else if(!strcmp(outDataTyp,"json")) {
-        writer[JSON](inFile,head);
+        writer[JSON](outFile,head);
     } else if(!strcmp(outDataTyp,"xml")) {
-        writer[XML](inFile,head);
+        writer[XML](outFile,head);
     } else {
-        writer[NONE](inFile,head);
+        writer[NONE](outFile,head);
     }
 
     destructQueqe(head);
