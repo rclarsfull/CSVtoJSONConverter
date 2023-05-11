@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
-#include <malloc.h>
+#include <stdlib.h>
 #define MAX_PATH_LEANGTH 60
 #define MAX_PUFFER_SIZE 1024
 #define MAX_NUMBER_OF_HEADLINES 20
