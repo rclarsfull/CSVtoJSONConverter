@@ -110,7 +110,8 @@ void readerCSV(FILE* file,struct Node* head){
     while(fgets(buffer,MAX_PUFFER_SIZE,file)){
         if(!(buffLength = strlen(buffer)))
             continue;
-        buffer[buffLength-1] = '\0';
+        if(buffer[buffLength-1] == '\n')
+            buffer[buffLength-1] = '\0';
         char* token = strtok(buffer, CSV_TRENNZEICHEN);
         while (token) {
             data = (char*) malloc(strlen(token)*sizeof(char)+1);
